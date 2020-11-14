@@ -5,6 +5,9 @@ import wumpus.Environment
 import wumpus.Player
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.math.abs
+import kotlin.math.acos
+import kotlin.math.hypot
 
 data class LogicAgent(var width: Int, var height: Int) : Agent{
     private var w: Int = width
@@ -69,16 +72,14 @@ data class LogicAgent(var width: Int, var height: Int) : Agent{
         if (west >= 0) nodesMap[Player.Direction.W] = west
 
         // Build the branches array
-        var branch = 0
         val nodes = Array(nodesMap.size) { IntArray(2) }
-        for (direction in nodesMap.keys) {
+        for ((branch, direction) in nodesMap.keys.withIndex()) {
             when (direction) {
                 Player.Direction.N -> nodes[branch] = intArrayOf(x, north)
                 Player.Direction.S -> nodes[branch] = intArrayOf(x, south)
                 Player.Direction.E -> nodes[branch] = intArrayOf(east, y)
                 Player.Direction.W -> nodes[branch] = intArrayOf(west, y)
             }
-            branch++
         }
         return nodes
     }
@@ -110,8 +111,8 @@ data class LogicAgent(var width: Int, var height: Int) : Agent{
         val dest = intArrayOf(to[0] - player.x, player.y - to[1])
         // The angle between the two vectors
         val dotProduct = from[0] * dest[0] + from[1] * dest[1].toDouble()
-        val lenProduct = Math.hypot(from[0].toDouble(), from[1].toDouble()) * Math.hypot(dest[0].toDouble(), dest[1].toDouble())
-        var theta = Math.acos(dotProduct / lenProduct)
+        val lenProduct = hypot(from[0].toDouble(), from[1].toDouble()) * hypot(dest[0].toDouble(), dest[1].toDouble())
+        var theta = acos(dotProduct / lenProduct)
         // Inverts when facing backwards
         if (player.direction == Player.Direction.N && getDirection(dest) == Player.Direction.E || player.direction == Player.Direction.E && getDirection(dest) == Player.Direction.S || player.direction == Player.Direction.S && getDirection(dest) == Player.Direction.W || player.direction == Player.Direction.W && getDirection(dest) == Player.Direction.N) {
             theta *= -1.0
@@ -129,7 +130,7 @@ data class LogicAgent(var width: Int, var height: Int) : Agent{
     private fun getActionsTo(player: Player, to: IntArray): ArrayList<Environment.Action>? {
         val actions = ArrayList<Environment.Action>()
         val turns = getTurns(player, to)
-        for (i in 0 until Math.abs(turns)) {
+        for (i in 0 until abs(turns)) {
             if (turns < 0) actions.add(Environment.Action.TURN_RIGHT)
             if (turns > 0) actions.add(Environment.Action.TURN_LEFT)
         }
@@ -147,7 +148,7 @@ data class LogicAgent(var width: Int, var height: Int) : Agent{
     private fun getActionsToShoot(player: Player, to: IntArray): ArrayList<Environment.Action>? {
         val actions = ArrayList<Environment.Action>()
         val turns = getTurns(player, to)
-        for (i in 0 until Math.abs(turns)) {
+        for (i in 0 until abs(turns)) {
             if (turns < 0) actions.add(Environment.Action.TURN_RIGHT)
             if (turns > 0) actions.add(Environment.Action.TURN_LEFT)
         }
