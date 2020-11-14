@@ -10,7 +10,7 @@ import wumpus.Environment.Perception;
  * The Player represents an interactive agent of the game that will manipulate the world and modify
  * it until reaches the end.
  */
-public class Player extends Object {
+public class Player {
     public enum Direction {
         N, E, S, W
     }
@@ -25,7 +25,7 @@ public class Player extends Object {
     private Direction direction = Direction.E;
     private boolean alive = true;
     private boolean gold = false;
-    private int arrows = 3;
+    private int arrows = 1;  // only 1 arrow
 
     /**
      * Creates a new Player for the given world.
@@ -55,7 +55,7 @@ public class Player extends Object {
      * Resets the player state.
      */
     protected void reset() {
-        arrows = 3;
+        arrows = 1;
         gold = false;
         direction = Direction.E;
         actions.clear();
