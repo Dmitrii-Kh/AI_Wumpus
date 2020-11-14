@@ -17,15 +17,14 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
 
     private val debug = true
     private var stenchMap = HashMap<Point, Int>()
-    private var isBREEZE = Array(w) { BooleanArray(h) }
+    private var perceiveBreeze = Array(w) { BooleanArray(h) }
     private var isVisited = Array(w) { BooleanArray(h) }
-    private var isSTENCH = Array(w) { BooleanArray(h) }
-    private val timesVisited = Array(w) { Array<Int>(h) { 0 } }
-    private var isBUMP = Array(w) { Array<Player.Direction>(h) { Player.Direction.E } }
-    private var isSCREAM = false
+    private var perceiveStench = Array(w) { BooleanArray(h) }
+    private var perceiveBump = Array(w) { Array<Player.Direction>(h) { Player.Direction.E } }
+    private var perceiveScream = false
 
-    private val board: HashMap<Point, ArrayList<Environment.Perception>> = HashMap()
     private val nextActions = LinkedList<Environment.Action>()
+
 
     override fun beforeAction(player: Player?) {
         if (debug) {
@@ -53,12 +52,15 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         }
         val x = player.x
         val y = player.y
+
         tell(player)
-        if (player.hasGlitter()) {
-            return Environment.Action.GRAB
-        }
+
+        if (player.hasGlitter()) { return Environment.Action.GRAB }
+        
         val neighbours = getNeighbors(x, y)
-        val tmp: ArrayList<Point> = ArrayList<Point>()
+
+        val visitedNeighbours: ArrayList<Point> = ArrayList<Point>()
+
         for (n in neighbours) {
             if (!isVisited[n[0]][n[1]] && isNotWumpus(n[0], n[1]) && isNotPit(n[0], n[1])) {
                 val actions = getActionsTo(player, n)
@@ -71,48 +73,49 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
             }
         }
         for (n in neighbours) {
-            var value = 0
             if (isVisited[n[0]][n[1]]) {
-                value = if (timesVisited[n[0]][n[1]] == 3) 1 else 5
-                tmp.add(Point(n[0], n[1], value))
-            } else if (!isVisited[n[0]][n[1]] && (isNotWumpus(n[0], n[1]) || isNotPit(n[0], n[1]))) {
-                tmp.add(Point(n[0], n[1], value))
+
+                visitedNeighbours.add(Point(n[0], n[1]))
             }
         }
-        Collections.sort(tmp, Collections.reverseOrder<Any>())
-        val next = intArrayOf(tmp[0].x, tmp[0].y)
+
+        val next = intArrayOf(visitedNeighbours[0].x, visitedNeighbours[0].y)
+
         val actions = getActionsTo(player, next)
         nextActions.addAll(actions)
         return nextActions.poll()
     }
 
-    // add info about tile to 'knowledge base'
+
     private fun tell(player: Player) {
         val x = player.x
         val y = player.y
-        timesVisited[x][y] += 1
-        isVisited[x][y] = true
+
         if (player.hasBreeze()) {
-            isBREEZE[x][y] = true
+            perceiveBreeze[x][y] = true
         }
         if (player.hasStench()) {
-            isSTENCH[x][y] = true
-            addToStenchMap(x, y)
+            perceiveStench[x][y] = true
+            if(!isVisited[x][y]) addToStenchMap(x, y)
         }
         if (player.hasBump()) {
-            isBUMP[x][y] = player.direction
+            perceiveBump[x][y] = player.direction
         }
         if (player.hasScream()) {
-            isSCREAM = true
+            perceiveScream = true
         }
+
+        isVisited[x][y] = true
     }
 
     private fun addToStenchMap(x: Int, y: Int) {
         val neighbors = getNeighbors(x, y)
         for (n in neighbors) {
+
             val point = Point(n[0], n[1], 0)
             if (point in stenchMap.keys) {
                 stenchMap[point] = 2
+
             } else {
                 stenchMap[point] = 1
             }
@@ -120,10 +123,10 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
     }
 
     private fun isWumpus(x: Int, y: Int): Boolean {
-        if (isSCREAM || isVisited[x][y]) {
+        if (perceiveScream || isVisited[x][y]) {
             return false
         }
-        val point = Point(x, y, 0)
+        val point = Point(x, y)
         if (point in stenchMap) {
             return stenchMap.getValue(point) == 2
         }
@@ -131,18 +134,17 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
     }
 
     private fun isNotWumpus(x: Int, y: Int): Boolean {
-        if (isSCREAM || isVisited[x][y]) {
+        if (perceiveScream || isVisited[x][y]) {
             return true
         }
 
-        //neighbours are numbered from west to south
         val neighbours = Array(4) { IntArray(2) }
         neighbours[0] = intArrayOf(x - 1, y)
         neighbours[1] = intArrayOf(x, y + 1)
         neighbours[2] = intArrayOf(x + 1, y)
         neighbours[3] = intArrayOf(x, y - 1)
         for (n in neighbours) {
-            if (isValid(n[0], n[1]) && isVisited[n[0]][n[1]] && !isSTENCH[n[0]][n[1]]) {
+            if (inBounds(n[0], n[1]) && isVisited[n[0]][n[1]] && !perceiveStench[n[0]][n[1]]) {
                 return true
             }
         }
@@ -154,21 +156,20 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
             return true
         }
 
-        //neighbours are numbered from west to south
         val neighbours = Array(4) { IntArray(2) }
         neighbours[0] = intArrayOf(x - 1, y)
         neighbours[1] = intArrayOf(x, y + 1)
         neighbours[2] = intArrayOf(x + 1, y)
         neighbours[3] = intArrayOf(x, y - 1)
         for (n in neighbours) {
-            if (isValid(n[0], n[1]) && isVisited[n[0]][n[1]] && !isBREEZE[n[0]][n[1]]) {
+            if (inBounds(n[0], n[1]) && isVisited[n[0]][n[1]] && !perceiveBreeze[n[0]][n[1]]) {
                 return true
             }
         }
         return false
     }
 
-    private fun isValid(x: Int, y: Int): Boolean {
+    private fun inBounds(x: Int, y: Int): Boolean {
         return x < w && x > -1 && y > -1 && y < h
     }
 
