@@ -9,6 +9,7 @@ import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.hypot
 
+
 data class LogicAgent(var width: Int, var height: Int) : Agent{
     private var w: Int = width
     private var h: Int = height
@@ -16,6 +17,9 @@ data class LogicAgent(var width: Int, var height: Int) : Agent{
     private val debug = true
 
     // TODO create one hashmap of Perception
+
+
+    private val board: HashMap<Point, ArrayList<Environment.Perception>> = HashMap()
 //    private val isBUMP: HashMap<Int, ArrayList<Player.Direction>> = HashMap()
 //    private val isVisited: HashMap<Int, ArrayList<Boolean>> = HashMap()
 //    private val isBREEZE: HashMap<Int, ArrayList<Boolean>> = HashMap()
