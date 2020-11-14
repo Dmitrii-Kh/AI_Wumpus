@@ -260,7 +260,8 @@ public class World {
      * @return The outcome of the game
      */
     public Environment.Result getResult() {
-        if (player.isAlive() && player.hasGold() && player.getTile().getIndex() == startPosition) {
+        if (player.isAlive() && player.hasGold()) {
+            // if (player.isAlive() && player.hasGold() && player.getTile().getIndex() == startPosition) {
             return Environment.Result.WIN;
         }
         return Environment.Result.LOOSE;

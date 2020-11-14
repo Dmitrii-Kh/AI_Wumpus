@@ -1,11 +1,13 @@
 import agents.HeuristicAgent;
+import agents.LogicBasedAgent;
 import wumpus.Agent;
 import wumpus.World;
 
 /**
  * Entry point for the application.
  */
-public class Main {
+public class
+Main {
     public static void main(String[] args) throws Exception {
         try {
             // Create a 4x4 world
@@ -15,7 +17,7 @@ public class Main {
             System.out.println("Hunt the Wumpus!");
 
             // Start and execute the AI agent
-            Agent agent = new HeuristicAgent(world.getWidth(), world.getHeight());
+            Agent agent = new LogicBasedAgent(world.getWidth(), world.getHeight());
             world.execute(agent);
 
             // Print the board and score table

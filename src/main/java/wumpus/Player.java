@@ -307,7 +307,7 @@ public class Player {
     }
 
     /**
-     * Returns if agent feels or not a steche.
+     * Returns if agent feels or not a stench.
      * @return <tt>true</tt> if player's feels a stench
      */
     public boolean hasStench() {
