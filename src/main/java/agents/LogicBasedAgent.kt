@@ -10,7 +10,7 @@ import kotlin.math.acos
 import kotlin.math.hypot
 
 
-data class LogicAgent(var width: Int, var height: Int) : Agent{
+data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
     private var w: Int = width
     private var h: Int = height
 

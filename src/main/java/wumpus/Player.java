@@ -335,7 +335,7 @@ public class Player {
      * @return The board representation
      */
     public String render() {
-        return world.render();
+        return world.renderAll();
     }
 
     /**
