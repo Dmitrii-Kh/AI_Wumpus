@@ -11,7 +11,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
     private var w: Int = width
     private var h: Int = height
 
-    private val debug = false
+    private val debug = true
     private var isBREEZE = Array(w) {BooleanArray(h)}
     private var isVisited = Array(w) {BooleanArray(h)}
     private var isSTENCH = Array(w) {BooleanArray(h)}
