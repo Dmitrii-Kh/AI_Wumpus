@@ -6,7 +6,8 @@ import wumpus.World;
 /**
  * Entry point for the application.
  */
-public class Main {
+public class
+Main {
     public static void main(String[] args) throws Exception {
         try {
             // Create a 4x4 world

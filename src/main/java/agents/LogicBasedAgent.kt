@@ -4,19 +4,21 @@ import wumpus.Agent
 import wumpus.Environment
 import wumpus.Player
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
-data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
+data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
     private var w: Int = width
     private var h: Int = height
 
     private val debug = true
-    private var isBREEZE = Array(w) {BooleanArray(h)}
-    private var isVisited = Array(w) {BooleanArray(h)}
-    private var isSTENCH = Array(w) {BooleanArray(h)}
-    private val timesVisited = Array(w) { Array<Int>(h) {0} }
-    private var isBUMP = Array(w) {Array<Player.Direction>(h){Player.Direction.E} }
+    private var stenchMap = HashMap<Point, Int>()
+    private var isBREEZE = Array(w) { BooleanArray(h) }
+    private var isVisited = Array(w) { BooleanArray(h) }
+    private var isSTENCH = Array(w) { BooleanArray(h) }
+    private val timesVisited = Array(w) { Array<Int>(h) { 0 } }
+    private var isBUMP = Array(w) { Array<Player.Direction>(h) { Player.Direction.E } }
     private var isSCREAM = false
 
     private val board: HashMap<Point, ArrayList<Environment.Perception>> = HashMap()
@@ -79,7 +81,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
             var value = 0
             if (isVisited[n[0]][n[1]]) {
                 // neibs.add(new MyPoint(n[0], n[1], timesVisited[n[0]][n[1]] == 3 ? 1 : 5));
-                value = if(timesVisited[n[0]][n[1]] == 3) 1 else 5
+                value = if (timesVisited[n[0]][n[1]] == 3) 1 else 5
                 neibs.add(Point(n[0], n[1], value))
             } else if (!isVisited[n[0]][n[1]] && (isNotWumpus(n[0], n[1]) || isNotPit(n[0], n[1]))) {
                 neibs.add(Point(n[0], n[1], value))
@@ -103,6 +105,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
         }
         if (player.hasStench()) {
             isSTENCH[x][y] = true
+            addToStenchMap(x, y)
         }
         if (player.hasBump()) {
             isBUMP[x][y] = player.direction
@@ -112,64 +115,27 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
         }
     }
 
+    private fun addToStenchMap(x: Int, y: Int) {
+        val neighbors = getNeighbors(x, y)
+        for (n in neighbors) {
+            var P = Point(n[0], n[1], 0)
+            if (P in stenchMap.keys) {
+                stenchMap[P] = 2
+            } else {
+                stenchMap[P] = 1
+            }
+
+        }
+
+    }
+
     private fun isWumpus(x: Int, y: Int): Boolean {
         if (isSCREAM || isVisited[x][y]) {
             return false
         }
-        val west = intArrayOf(x - 1, y)
-        val north = intArrayOf(x, y + 1)
-        val east = intArrayOf(x + 1, y)
-        val south = intArrayOf(x, y - 1)
-        if (isValid(south[0], south[1]) && isVisited[south[0]][south[1]] && isSTENCH[south[0]][south[1]]) {
-            if (isValid(east[0], east[1]) && isVisited[east[0]][east[1]] && isSTENCH[east[0]][east[1]] && isVisited[x + 1][y - 1]) {
-                return true
-            }
-            if (isValid(west[0], west[1]) && isVisited[west[0]][west[1]] && isSTENCH[west[0]][west[1]] && isVisited[x - 1][y - 1]) {
-                return true
-            }
-            if (isValid(north[0], north[1]) && isVisited[north[0]][north[1]] && isSTENCH[north[0]][north[1]]) {
-                return true
-            }
-        }
-        if (isValid(north[0], north[1]) && isVisited[north[0]][north[1]] && isSTENCH[north[0]][north[1]]) {
-            if (isValid(east[0], east[1]) && isVisited[east[0]][east[1]] && isSTENCH[east[0]][east[1]] && isVisited[x + 1][y + 1]) {
-                return true
-            }
-            if (isValid(west[0], west[1]) && isVisited[west[0]][west[1]] && isSTENCH[west[0]][west[1]] && isVisited[x - 1][y + 1]) {
-                return true
-            }
-        }
-        if (isValid(east[0], east[1]) && isVisited[east[0]][east[1]] && isSTENCH[east[0]][east[1]] &&
-                isValid(west[0], west[1]) && isVisited[west[0]][west[1]] && isSTENCH[west[0]][west[1]]) {
-            return true
-        }
-        if (isValid(south[0], south[1]) && isVisited[south[0]][south[1]] && isSTENCH[south[0]][south[1]]
-                && (!isValid(south[0], south[1] - 1) || isVisited[south[0]][south[1] - 1])) {
-            if (isValid(x + 1, y - 1) && isVisited[x + 1][y - 1] && isBUMP[south[0]][south[1]] == Player.Direction.W
-                    || isValid(x - 1, y - 1) && isVisited[x - 1][y - 1] && isBUMP[south[0]][south[1]] == Player.Direction.E) {
-                return true
-            }
-        }
-        if (isValid(north[0], north[1]) && isVisited[north[0]][north[1]] && isSTENCH[north[0]][north[1]]
-                && (!isValid(north[0], north[1] + 1) || isVisited[north[0]][north[1] + 1])) {
-            if (isValid(x + 1, y + 1) && isVisited[x + 1][y + 1] && isBUMP[north[0]][north[1]] == Player.Direction.W
-                    || isValid(x - 1, y + 1) && isVisited[x - 1][y + 1] && isBUMP[north[0]][north[1]] == Player.Direction.E) {
-                return true
-            }
-        }
-        if (isValid(west[0], west[1]) && isVisited[west[0]][west[1]] && isSTENCH[west[0]][west[1]]
-                && (!isValid(west[0] - 1, west[1]) || isVisited[west[0] - 1][west[1]])) {
-            if (isValid(x - 1, y - 1) && isVisited[x - 1][y - 1] && isBUMP[west[0]][west[1]] == Player.Direction.N
-                    || isValid(x - 1, y + 1) && isVisited[x - 1][y + 1] && isBUMP[west[0]][west[1]] == Player.Direction.S) {
-                return true
-            }
-        }
-        if (isValid(east[0], east[1]) && isVisited[east[0]][east[1]] && isSTENCH[east[0]][east[1]]
-                && (!isValid(east[0] + 1, east[1]) || isVisited[east[0] + 1][east[1]])) {
-            if (isValid(x + 1, y - 1) && isVisited[x + 1][y - 1] && isBUMP[east[0]][east[1]] == Player.Direction.N
-                    || isValid(x + 1, y + 1) && isVisited[x + 1][y + 1] && isBUMP[east[0]][east[1]] == Player.Direction.S) {
-                return true
-            }
+        val point = Point(x, y, 0)
+        if (point in stenchMap) {
+            return stenchMap.getValue(point) == 2
         }
         return false
     }
@@ -341,7 +307,6 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent{
         if (coords[0] == +0 && coords[1] == -1) return Player.Direction.S
         return if (coords[0] == -1 && coords[1] == +0) Player.Direction.W else Player.Direction.E
     }
-
 
 
 }
