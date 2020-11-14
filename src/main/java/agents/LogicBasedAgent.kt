@@ -112,7 +112,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         val neighbors = getNeighbors(x, y)
         for (n in neighbors) {
 
-            val point = Point(n[0], n[1], 0)
+            val point = Point(n[0], n[1])
             if (point in stenchMap.keys) {
                 stenchMap[point] = 2
 
