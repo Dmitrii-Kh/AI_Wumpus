@@ -6,6 +6,9 @@ import wumpus.Player
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.abs
+import kotlin.math.acos
+import kotlin.math.hypot
 
 
 data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
@@ -23,15 +26,6 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
 
     private val board: HashMap<Point, ArrayList<Environment.Perception>> = HashMap()
     private val nextActions = LinkedList<Environment.Action>()
-
-    // TODO create one hashmap of Perception
-
-//    private val isBUMP: HashMap<Int, ArrayList<Player.Direction>> = HashMap()
-//    private val isVisited: HashMap<Int, ArrayList<Boolean>> = HashMap()
-//    private val isBREEZE: HashMap<Int, ArrayList<Boolean>> = HashMap()
-//    private val isSTENCH: HashMap<Int, ArrayList<Boolean>> = HashMap()
-
-//    private val timesVisited: HashMap<Int, ArrayList<Int>> = HashMap()
 
     override fun beforeAction(player: Player?) {
         if (debug) {
@@ -53,7 +47,6 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         }
     }
 
-
     override fun getAction(player: Player): Environment.Action? {
         if (nextActions.size > 0) {
             return nextActions.poll()
@@ -65,7 +58,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
             return Environment.Action.GRAB
         }
         val neighbours = getNeighbors(x, y)
-        val neibs: ArrayList<Point> = ArrayList<Point>()
+        val tmp: ArrayList<Point> = ArrayList<Point>()
         for (n in neighbours) {
             if (!isVisited[n[0]][n[1]] && isNotWumpus(n[0], n[1]) && isNotPit(n[0], n[1])) {
                 val actions = getActionsTo(player, n)
@@ -80,15 +73,14 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         for (n in neighbours) {
             var value = 0
             if (isVisited[n[0]][n[1]]) {
-                // neibs.add(new MyPoint(n[0], n[1], timesVisited[n[0]][n[1]] == 3 ? 1 : 5));
                 value = if (timesVisited[n[0]][n[1]] == 3) 1 else 5
-                neibs.add(Point(n[0], n[1], value))
+                tmp.add(Point(n[0], n[1], value))
             } else if (!isVisited[n[0]][n[1]] && (isNotWumpus(n[0], n[1]) || isNotPit(n[0], n[1]))) {
-                neibs.add(Point(n[0], n[1], value))
+                tmp.add(Point(n[0], n[1], value))
             }
         }
-        Collections.sort(neibs, Collections.reverseOrder<Any>())
-        val next = intArrayOf(neibs[0].x, neibs[0].y)
+        Collections.sort(tmp, Collections.reverseOrder<Any>())
+        val next = intArrayOf(tmp[0].x, tmp[0].y)
         val actions = getActionsTo(player, next)
         nextActions.addAll(actions)
         return nextActions.poll()
@@ -118,15 +110,13 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
     private fun addToStenchMap(x: Int, y: Int) {
         val neighbors = getNeighbors(x, y)
         for (n in neighbors) {
-            var P = Point(n[0], n[1], 0)
-            if (P in stenchMap.keys) {
-                stenchMap[P] = 2
+            val point = Point(n[0], n[1], 0)
+            if (point in stenchMap.keys) {
+                stenchMap[point] = 2
             } else {
-                stenchMap[P] = 1
+                stenchMap[point] = 1
             }
-
         }
-
     }
 
     private fun isWumpus(x: Int, y: Int): Boolean {
@@ -205,16 +195,14 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         if (west >= 0) nodesMap[Player.Direction.W] = west
 
         // Build the branches array
-        var branch = 0
         val nodes = Array(nodesMap.size) { IntArray(2) }
-        for (direction in nodesMap.keys) {
+        for ((branch, direction) in nodesMap.keys.withIndex()) {
             when (direction) {
                 Player.Direction.N -> nodes[branch] = intArrayOf(x, north)
                 Player.Direction.S -> nodes[branch] = intArrayOf(x, south)
                 Player.Direction.E -> nodes[branch] = intArrayOf(east, y)
                 Player.Direction.W -> nodes[branch] = intArrayOf(west, y)
             }
-            branch++
         }
         return nodes
     }
@@ -247,10 +235,17 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         val dest = intArrayOf(to[0] - player.x, player.y - to[1])
         // The angle between the two vectors
         val dotProduct = from[0] * dest[0] + from[1] * dest[1].toDouble()
-        val lenProduct = Math.hypot(from[0].toDouble(), from[1].toDouble()) * Math.hypot(dest[0].toDouble(), dest[1].toDouble())
-        var theta = Math.acos(dotProduct / lenProduct)
+        val lenProduct = hypot(from[0].toDouble(), from[1].toDouble()) * hypot(dest[0].toDouble(), dest[1].toDouble())
+        var theta = acos(dotProduct / lenProduct)
         // Inverts when facing backwards
-        if (player.direction == Player.Direction.N && getDirection(dest) == Player.Direction.E || player.direction == Player.Direction.E && getDirection(dest) == Player.Direction.S || player.direction == Player.Direction.S && getDirection(dest) == Player.Direction.W || player.direction == Player.Direction.W && getDirection(dest) == Player.Direction.N) {
+        if (player.direction == Player.Direction.N &&
+                getDirection(dest) == Player.Direction.E ||
+                player.direction == Player.Direction.E &&
+                getDirection(dest) == Player.Direction.S ||
+                player.direction == Player.Direction.S &&
+                getDirection(dest) == Player.Direction.W ||
+                player.direction == Player.Direction.W &&
+                getDirection(dest) == Player.Direction.N) {
             theta *= -1.0
         }
         // Count how many turns
@@ -267,7 +262,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
     private fun getActionsTo(player: Player, to: IntArray): ArrayList<Environment.Action> {
         val actions = ArrayList<Environment.Action>()
         val turns = getTurns(player, to)
-        for (i in 0 until Math.abs(turns)) {
+        for (i in 0 until abs(turns)) {
             if (turns < 0) actions.add(Environment.Action.TURN_RIGHT)
             if (turns > 0) actions.add(Environment.Action.TURN_LEFT)
         }
@@ -286,7 +281,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
     private fun getActionsToShoot(player: Player, to: IntArray): ArrayList<Environment.Action> {
         val actions = ArrayList<Environment.Action>()
         val turns = getTurns(player, to)
-        for (i in 0 until Math.abs(turns)) {
+        for (i in 0 until abs(turns)) {
             if (turns < 0) actions.add(Environment.Action.TURN_RIGHT)
             if (turns > 0) actions.add(Environment.Action.TURN_LEFT)
         }
@@ -307,6 +302,5 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         if (coords[0] == +0 && coords[1] == -1) return Player.Direction.S
         return if (coords[0] == -1 && coords[1] == +0) Player.Direction.W else Player.Direction.E
     }
-
 
 }
