@@ -46,7 +46,7 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
         }
     }
 
-    override fun getAction(player: Player): Environment.Action? {
+    override fun ask(player: Player): Environment.Action? {
         if (nextActions.size > 0) {
             return nextActions.poll()
         }
@@ -67,6 +67,10 @@ data class LogicBasedAgent(var width: Int, var height: Int) : Agent {
                 nextActions.addAll(actions)
                 return nextActions.poll()
             } else if (player.hasArrows() && isWumpus(n[0], n[1])) {
+                val nghbrsToClean = getNeighbors(n[0], n[1])
+                for(nghbr in nghbrsToClean) {
+                    perceiveStench[nghbr[0]][nghbr[1]] = false
+                }
                 val actions = getActionsToShoot(player, n)
                 nextActions.addAll(actions)
                 return nextActions.poll()

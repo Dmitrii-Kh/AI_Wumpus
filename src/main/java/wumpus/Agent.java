@@ -11,7 +11,7 @@ public interface Agent {
      * @param player The player instance
      * @return The action to execute
      */
-    Action getAction(Player player);
+    Action ask(Player player);
 
     /**
      * Executes before takes the action.

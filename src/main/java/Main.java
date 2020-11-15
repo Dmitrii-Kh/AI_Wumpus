@@ -1,4 +1,3 @@
-import agents.HeuristicAgent;
 import agents.LogicBasedAgent;
 import wumpus.Agent;
 import wumpus.World;

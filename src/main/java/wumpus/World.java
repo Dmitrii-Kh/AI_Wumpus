@@ -69,7 +69,7 @@ public class World {
 
         for (Player player : run()) {
             agent.beforeAction(player);
-            Action actions = agent.getAction(player);
+            Action actions = agent.ask(player);
             player.setAction(actions);
             agent.afterAction(player);
         }
